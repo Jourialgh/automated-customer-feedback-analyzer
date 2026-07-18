@@ -1,0 +1,244 @@
+{
+  "name": "Feedback Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-feedback",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d137a0c9-e923-43f0-a2b0-329436a93ab2",
+      "name": "Webhook",
+      "webhookId": "caf6e409-e80f-407d-8d06-18f1ceb9122e"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a rigid customer support data processor. Analyze the incoming text and output exactly one word: \"Positive\", \"Neutral\", or \"Angry\". Do not include formatting, markdown, punctuation, or friendly introductory text.\n\nCustomer Feedback: \n{{ $json.body.data.fields[2].value }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "f3ada758-2fa3-410b-ae43-1fd29dda3799",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "q4s7H94WAs1DUBQ8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4eea80cb-aa2d-439d-ba00-396dfe982fe2",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "Angry",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        576,
+        0
+      ],
+      "id": "fe15db1e-9199-4071-bc79-e1b5927e0690",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "jouriemad17@gmail.com",
+        "subject": "🚨 URGENT: Angry Customer Escalation",
+        "emailType": "text",
+        "message": "=\"Customer {{ $('Webhook').item.json.body.name }} left an angry review: {{ $('Webhook').item.json.body.feedback }}\".",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -96
+      ],
+      "id": "d147c99c-98b8-499a-b007-ec83827162ea",
+      "name": "Send a message",
+      "webhookId": "1c13fe4e-0037-4bc6-af22-ceee6abecb7f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UZuaXVirscahx7Gz",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1RG4O1mmlQbuSsCreU-dlTpXHJX68mCMsWAZY50q_hco",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Webhook').item.json.body.data.fields[0].value }}",
+            "Email": "={{ $('Webhook').item.json.body.data.fields[1].value }}",
+            "Feedback": "={{ $('Webhook').item.json.body.data.fields[2].value }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Feedback",
+              "displayName": "Feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        96
+      ],
+      "id": "e8b4a159-492b-4c0b-8863-5ef3709601bd",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MJR7axeUxOQhkjDg",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "18f5d364-e128-4bef-bdc3-0e87bfb86e95",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "67ec1c5f498c879e721fc1e357ba16f51f7bfa46cb44872e1146e926ef928f51"
+  },
+  "nodeGroups": [],
+  "id": "GGdJkYJfndTpVDqZ",
+  "tags": []
+}
